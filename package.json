@@ -1,33 +1,31 @@
 {
-  "name": "lackey-mongoose-acl",
-  "version": "0.0.1",
-  "description": "A mongoose plugin to provide granular access control.",
-  "main": "index.js",
-  "scripts": {
-    "test": "NODE_ENV=test mocha --recursive"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/getlackey/mongoose-acl.git"
-  },
-  "keywords": [
-    "mongoose",
-    "acl",
-    "authentication",
-    "authorization"
-  ],
-  "author": "Enigma Marketing",
-  "license": "Apache 2.0",
-  "bugs": {
-    "url": "https://github.com/getlackey/mongoose-acl/issues"
-  },
-  "homepage": "https://github.com/getlackey/mongoose-acl#readme",
-  "devDependencies": {
-    "async": "^1.2.1",
-    "mocha": "^2.2.5",
-    "mongoose": "^4.0.5"
-  },
-  "dependencies": {
-    "deep-get-set": "^0.1.1"
-  }
+    "name": "lackey-mongoose-acl",
+    "version": "0.0.1",
+    "description": "A mongoose plugin to provide granular access control.",
+    "main": "index.js",
+    "scripts": {
+        "test": "NODE_ENV=test mocha --recursive"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/getlackey/mongoose-acl.git"
+    },
+    "keywords": [
+        "mongoose",
+        "acl",
+        "authentication",
+        "authorization"
+    ],
+    "author": "Enigma Marketing",
+    "license": "Apache 2.0",
+    "bugs": {
+        "url": "https://github.com/getlackey/mongoose-acl/issues"
+    },
+    "homepage": "https://github.com/getlackey/mongoose-acl#readme",
+    "devDependencies": {
+        "async": "^1.2.1",
+        "mocha": "^2.2.5",
+        "mongoose": "^4.0.5"
+    },
+    "dependencies": {}
 }
