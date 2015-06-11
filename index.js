@@ -123,7 +123,7 @@ module.exports = function (schema, options) {
                     userGrants.push('public');
                 }
 
-                if (options.addAuthor) {
+                if (user && options.addAuthor) {
                     authorId = deep(user, options.userIdField);
                     authorGrant = 'author-' + authorId;
 
