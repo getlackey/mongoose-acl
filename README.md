@@ -11,7 +11,7 @@ Access is provided with Grants - a string keyword that can be assigned to docume
 
 This plugin doesn't handle user autentication. That has to be performed with some other tool, like [passport](https://www.npmjs.com/package/passport) or Lackey's custom login. 
 
-In the current implementation either the user has full access to the data or he doesn't. There is no attempt to define the type of access (Read, write, etc..). We are using this plugin on GET requests only. On the other methods (POST, PUT, DELETE) we just check if the user belongs to an admin or a developer group and return early otherwise. This plugin helps determined wich documents in a collection he has access to, either because he is an author or because he has been granted access to it.
+In the current implementation either the user has full access to the data or he doesn't. There is no attempt to define the type of access (Read, write, etc..). We are using this plugin on GET requests only. On the other methods (POST, PUT, DELETE) we just check if the user belongs to an admin or a developer group and return early otherwise. This plugin helps determine which documents in a collection the user has access to, either because he is an author or because he has been granted access to the document.
 
 There are two special grants - **public** and **admin**. The **public** grant is added by default to all documents, granting access to anyone. All requests will return documents that hold the **public** grant, even if there is no logged in user. The **admin** grant is used if no required grants are defined in the plugin, so we have an easy way to grant full access to any user.
 
@@ -25,12 +25,12 @@ mongoSchema = new Schema(require('./my-schema'));
 mongoSchema.plugin(acl);
 ```
 
-On the controller, when we perform the query.
+And then, on the controller, when we perform the query.
 
 ``` 
 MySchemaModel
 	.find()
-	.checkAcl(res.user)
+	.checkAcl(res.user) // res.user = {grants:['admin', ...]}
 	.lean(true)
 	.exec()
 	.then(mySuccessHandler, myErrorHandler);
@@ -38,11 +38,13 @@ MySchemaModel
 
 The **checkAcl** method has been injected into the model and appends the grants validation filter to any query added to the find method. Just remember to add the **checkAcl** after the **find** method.
 
-By default the user grant list is kept in an array named grants, eg. **res.user.grants**, but that may be defined in the options. 
+By default, the user grant list is kept in an array named grants, eg. **res.user.grants**, but that may be defined in the options. 
 
 If there is no user and undefined is provided to the **checkAcl** method, a grants list with only the public grant will be used. No error will be thrown in this case. 
 
 ### Options
+
+An example with all the available options:
 
 ```
 var acl = require('lackey-mongoose-acl');
@@ -106,7 +108,7 @@ var user = {
 ```
 
 #### authorIdField
-The field in the document where we should get the id from. By default it searches the document for author._id or just author if it is an ObjectId.
+The field in the document where we should get the id from. By default it searches the document for author._id.
 
 
 
