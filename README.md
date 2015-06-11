@@ -108,7 +108,7 @@ var user = {
 ```
 
 #### authorIdField
-The field in the document where we should get the id from. By default it searches the document for author._id or just author if it is an ObjectId.
+The field in the document where we should get the id from. By default it searches the document for author._id.
 
 
 
