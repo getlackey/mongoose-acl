@@ -16,22 +16,66 @@
     limitations under the License.
 */
 
+function deep(obj, str) {
+    var o = obj,
+        s = (Array.isArray(str) ? str : str.split('.'));
+
+    o = o[s.shift()];
+
+    if (s.length > 0) {
+        return deep(o, s);
+    }
+
+    return o;
+}
+
 module.exports = function (schema, options) {
-    schema.add({
-        grants: [String]
+    var schemaAddition = {}; // properties we will add to the schema
+
+    options = options || {};
+    options.required = options.required || ['admin'];
+    options.addAuthor = !!options.addAuthor;
+
+    options.userGrantsField = options.userGrantsField || 'grants';
+    options.userIdField = options.userIdField || '_id';
+
+    options.docGrantsField = options.docGrantsField || 'grants';
+    options.authorIdField = options.authorIdField || 'author._id';
+
+    // update the schema to include a grants array
+    schemaAddition[options.userGrantsField] = [String];
+    schema.add(schemaAddition);
+
+    if (!options.defaults) {
+        options.defaults = options.required.slice(0);
+        // we only push public grant if the defaults haven't
+        // been set. Some models will have no public access
+        if (options.defaults.indexOf('public') === -1) {
+            options.defaults.push('public');
+        }
+    }
+    // Add the required grants to defaults so we had them to new docs
+    // in one step
+    options.required.forEach(function (grant) {
+        if (options.defaults.indexOf(grant) === -1) {
+            options.defaults.push(grant);
+        }
     });
 
     // add default grants to document on creation
+    // throw error if required grants were remove
     schema.pre('save', function (next) {
         var self = this,
             missingGrants = [],
-            err = null;
+            err = null,
+            authorGrant,
+            authorId;
 
-        if (options.defaults && self.isNew) {
-            if (!self.grants || self.grants.lenght === 0) {
+        if (self.isNew) {
+            if (!self.grants || self.grants.length === 0) {
                 self.grants = options.defaults;
             }
-        } else if (options.required && this.isModified()) {
+        } else if (self.isModified()) {
             if (!self.grants) {
                 self.grants = [];
             }
@@ -43,8 +87,17 @@ module.exports = function (schema, options) {
             });
         }
 
+        if (options.addAuthor) {
+            authorId = deep(self, options.authorIdField);
+            authorGrant = 'author-' + authorId;
+
+            if (authorId && self.grants.indexOf(authorGrant) === -1) {
+                self.grants.push(authorGrant);
+            }
+        }
+
         if (missingGrants.length > 0) {
-            err = new Error('Missing required Grants ' + missingGrants.join(','));
+            err = new Error('Missing required Grants: ' + missingGrants.join(','));
         }
         next(err);
     });
@@ -56,14 +109,32 @@ module.exports = function (schema, options) {
         // and call it in our new find method
         Model.__find = Model.find;
 
-        Model.find = function (conditions, fields, options, callback) {
+        Model.find = function (conditions, fields, opts, callback) {
             var self = this,
-                mq = self.__find(conditions, fields, options, callback);
+                mq = self.__find(conditions, fields, opts, callback);
 
             mq.checkAcl = function (user, cb) {
-                var cond = mq._conditions;
+                var cond = mq._conditions,
+                    userGrants = (user && user[options.userGrantsField] && user[options.userGrantsField].slice(0)) || [],
+                    authorId,
+                    authorGrant;
 
-                //cond.user = user._id;
+                if (userGrants.indexOf('public') === -1) {
+                    userGrants.push('public');
+                }
+
+                if (options.addAuthor) {
+                    authorId = deep(user, options.userIdField);
+                    authorGrant = 'author-' + authorId;
+
+                    if (authorId && userGrants.indexOf(authorGrant) === -1) {
+                        userGrants.push(authorGrant);
+                    }
+                }
+
+                cond[options.docGrantsField] = {
+                    $in: userGrants
+                };
 
                 mq.find(cond, cb);
 

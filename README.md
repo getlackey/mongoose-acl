@@ -1,7 +1,8 @@
 # Mongoose ACL
 ----
-**This is an early, untested, version. Pull Requests are welcome**
+**This is an early, barely tested, version. Pull Requests are welcome**
 ----
+
 A mongoose plugin to provide granular access control. 
 
 This module is part of the [Lackey CMS](https://lackey.io).
@@ -12,7 +13,7 @@ This plugin doesn't handle user autentication. That has to be performed with som
 
 In the current implementation either the user has full access to the data or he doesn't. There is no attempt to define the type of access (Read, write, etc..). We are using this plugin on GET requests only. On the other methods (POST, PUT, DELETE) we just check if the user belongs to an admin or a developer group and return early otherwise. This plugin helps determined wich documents in a collection he has access to, either because he is an author or because he has been granted access to it.
 
-There is a special grant - **public**. This grant is added by default to all documents, granting access to anyone. All requests will return documents that hold the **public** grant, even if there is no logged in user.
+There are two special grants - **public** and **admin**. The **public** grant is added by default to all documents, granting access to anyone. All requests will return documents that hold the **public** grant, even if there is no logged in user. The **admin** grant is used if no required grants are defined in the plugin, so we have an easy way to grant full access to any user.
 
 ## Basic Usage
 Just load it in a mongoose schema, just like any other plugin.
@@ -50,24 +51,61 @@ mongoSchema = new Schema(require('./my-schema'));
 mongoSchema.plugin(acl, {
     required: ['admin', 'developer'],
     defaults: ['api', 'public'],//public is a special grant
-    userGrantsField: 'grants'
+    docGrantsField: 'grants',
+    userGrantsField: 'grants',
+    userIdField: '_id',
     addAuthor: true,
-    authorField: 'author._id'
+    authorIdField: 'author._id'
 });
 ```
 
 #### required
 These grants will be appended to every document and can't be removed. Either they are merged with the submitted grants or the defaults. There is no need to add the grants in both the required and defaults options. Trying to remove them from the grant list of an existing document throws an error. 
 
-If this options is not defined, by default the **public** grant will be added.
+If this options is not defined, by default the **admin** grant will be added.
 
 #### defaults 
 The list of grants that are added to a document on creation, if none is submitted.
 
-#### addAuthor
-Each user may have it's own, exclusive, grant. That is useful for transparently granting access to the user own documents. By default the user id will be used as a grant, prefixed by 'author-', eg. 'author-557847a1ac1235358644d8c8'.
+#### docGrantsField
+The property in this schema where we will store the grants array. By default it's **grants**.
 
-#### authorField
+#### userGrantsField
+The property in the user object that is provided to **checkAcl** where we can find the grants array. By default it's **grants**.
+
+#### userIdField
+The id property for the user. Used when **addAuthor** is enabled and the author grant isn't defined.
+
+#### addAuthor
+Each user may have it's own, exclusive, grant. This is disabled by default.
+
+Useful for transparently granting access to the user own documents. By default the user _id will be used as a grant, prefixed by 'author-', eg. 'author-557847a1ac1235358644d8c8'.
+
+When providing the logged in user in **checkAcl** make sure either his own grant is provided or the id is defined.
+
+```
+var user = {
+	id: '557847a1ac1235358644d8c8'
+	grants: [
+		'admin', 
+		'promotions'
+	]
+};
+```
+
+or, don't include the id but include the grant:
+
+```
+var user = {
+	grants: [
+		'admin', 
+		'promotions',
+		'author-557847a1ac1235358644d8c8'
+	]
+};
+```
+
+#### authorIdField
 The field in the document where we should get the id from. By default it searches the document for author._id or just author if it is an ObjectId.
 
 

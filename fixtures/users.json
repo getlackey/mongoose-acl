@@ -1,0 +1,12 @@
+{
+    "admin": {
+        "id": "557847a1ac1235358644d8c8",
+        "name": "Admininstrator",
+        "grants": ["admin", "author"]
+    },
+    "developer": {
+        "id": "557847a1ac1235358644d8c9",
+        "name": "Developer",
+        "grants": ["admin", "author"]
+    }
+}
