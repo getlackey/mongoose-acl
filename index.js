@@ -79,13 +79,13 @@ module.exports = function (schema, options) {
             if (!self.grants) {
                 self.grants = [];
             }
-
-            options.required.forEach(function (grant) {
-                if (self.grants.indexOf(grant) === -1) {
-                    missingGrants.push(grant);
-                }
-            });
         }
+
+        options.required.forEach(function (grant) {
+            if (self.grants.indexOf(grant) === -1) {
+                missingGrants.push(grant);
+            }
+        });
 
         if (options.addAuthor) {
             authorId = deep(self, options.authorIdField);
@@ -99,6 +99,7 @@ module.exports = function (schema, options) {
         if (missingGrants.length > 0) {
             err = new Error('Missing required Grants: ' + missingGrants.join(','));
         }
+
         next(err);
     });
 
