@@ -42,7 +42,7 @@ By default, the user grant list is kept in an array named grants, eg. **res.user
 
 If there is no user and undefined is provided to the **checkAcl** method, a grants list with only the public grant will be used. No error will be thrown in this case. 
 
-The plugin only returns documents that were granted to the user. When requesting a single document, this will end up triggering a *HTTP 404 Not Found* instead of an *HTTP 403 Forbidden*.
+The plugin only returns documents that were granted to the user. When requesting a single document, this will end up triggering an HTTP 404 Not Found instead of an HTTP 403 Forbidden.
 
 ``` 
 MySchemaModel
@@ -53,7 +53,7 @@ MySchemaModel
 	.then(mySuccessHandler, myErrorHandler);
 ```
 
-If you're a pedantic HTTP API developer this will not be acceptable - a propper HTTP **must** be returned. So you can check ACL **after** the query has been performed. That will trigger a 403 [HttpStatusError](https://www.npmjs.com/package/common-errors#httpstatus) if the user isn't allowed to access the document. No user, triggers a HTTP Error 401 Unauthorized.
+If you're a pedantic HTTP API developer this will not be acceptable - a proper HTTP **must** be returned. So you can check ACL **after** the query has been performed. That will trigger an 403 [HttpStatusError](https://www.npmjs.com/package/common-errors#httpstatus), if the user isn't allowed to access the document. No user, triggers an HTTP 401 Unauthorized.
 
 ``` 
 MySchemaModel
