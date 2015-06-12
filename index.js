@@ -16,6 +16,9 @@
     limitations under the License.
 */
 
+var assert = require('assert'),
+    errors = require('common-errors');
+
 function deep(obj, str) {
     var o = obj,
         s = (Array.isArray(str) ? str : str.split('.'));
@@ -54,7 +57,7 @@ module.exports = function (schema, options) {
             options.defaults.push('public');
         }
     }
-    // Add the required grants to defaults so we had them to new docs
+    // Add the required grants to defaults so we add them to new docs
     // in one step
     options.required.forEach(function (grant) {
         if (options.defaults.indexOf(grant) === -1) {
@@ -62,6 +65,62 @@ module.exports = function (schema, options) {
         }
     });
 
+    function getUserGrants(user) {
+        var userGrants = (user && user[options.userGrantsField] && user[options.userGrantsField].slice(0)) || [],
+            authorId,
+            authorGrant;
+
+        if (userGrants.indexOf('public') === -1) {
+            userGrants.push('public');
+        }
+
+        if (user && options.addAuthor) {
+            authorId = deep(user, options.userIdField);
+            authorGrant = 'author-' + authorId;
+
+            if (authorId && userGrants.indexOf(authorGrant) === -1) {
+                userGrants.push(authorGrant);
+            }
+        }
+
+        return userGrants;
+    }
+
+    function addAclQuery(mq, user) {
+        var cond = mq._conditions;
+
+        cond[options.docGrantsField] = {
+            $in: getUserGrants(user)
+        };
+    }
+
+    schema.statics.checkAcl = function search(user) {
+        var userGrants = getUserGrants(user);
+
+        return function (doc) {
+            var grants = (doc && doc.grants) || [],
+                isAllowed = false;
+
+            if (!user && grants.indexOf('public') === -1) {
+                throw new errors.HttpStatusError(401, 'Unauthorized');
+            }
+
+            assert(!Array.isArray(doc), 'Expecting a document, not an Array');
+
+            isAllowed = userGrants.some(function (grant) {
+                if (grants.indexOf(grant) > -1) {
+                    return true;
+                }
+                return false;
+            });
+
+            if (!isAllowed) {
+                throw new errors.HttpStatusError(403, 'Forbidden');
+            }
+
+            return doc;
+        };
+    };
     // add default grants to document on creation
     // throw error if required grants were remove
     schema.pre('save', function (next) {
@@ -79,13 +138,13 @@ module.exports = function (schema, options) {
             if (!self.grants) {
                 self.grants = [];
             }
-
-            options.required.forEach(function (grant) {
-                if (self.grants.indexOf(grant) === -1) {
-                    missingGrants.push(grant);
-                }
-            });
         }
+
+        options.required.forEach(function (grant) {
+            if (self.grants.indexOf(grant) === -1) {
+                missingGrants.push(grant);
+            }
+        });
 
         if (options.addAuthor) {
             authorId = deep(self, options.authorIdField);
@@ -99,44 +158,40 @@ module.exports = function (schema, options) {
         if (missingGrants.length > 0) {
             err = new Error('Missing required Grants: ' + missingGrants.join(','));
         }
+
         next(err);
     });
 
     // expose the checkAcl method in the model
     schema.on('init', function (Model) {
-        // We are overwriting/extending the find method
+        // We are overwriting/extending the find methods
         // we keep the reference to the old method in __find
         // and call it in our new find method
         Model.__find = Model.find;
-
         Model.find = function (conditions, fields, opts, callback) {
             var self = this,
                 mq = self.__find(conditions, fields, opts, callback);
 
             mq.checkAcl = function (user, cb) {
-                var cond = mq._conditions,
-                    userGrants = (user && user[options.userGrantsField] && user[options.userGrantsField].slice(0)) || [],
-                    authorId,
-                    authorGrant;
-
-                if (userGrants.indexOf('public') === -1) {
-                    userGrants.push('public');
-                }
-
-                if (options.addAuthor) {
-                    authorId = deep(user, options.userIdField);
-                    authorGrant = 'author-' + authorId;
-
-                    if (authorId && userGrants.indexOf(authorGrant) === -1) {
-                        userGrants.push(authorGrant);
-                    }
-                }
-
-                cond[options.docGrantsField] = {
-                    $in: userGrants
-                };
+                var cond = addAclQuery(mq, user);
 
                 mq.find(cond, cb);
+
+                return mq;
+            };
+
+            return mq;
+        };
+
+        Model.__findOne = Model.findOne;
+        Model.findOne = function (conditions, fields, opts, callback) {
+            var self = this,
+                mq = self.__findOne(conditions, fields, opts, callback);
+
+            mq.checkAcl = function (user, cb) {
+                var cond = addAclQuery(mq, user);
+
+                mq.findOne(cond, cb);
 
                 return mq;
             };

@@ -80,6 +80,26 @@ describe('Mongoose ACL', function () {
                 })
                 .then(null, done);
         });
+
+        it('Should throw error with missing grants', function (done) {
+            var mongoSchema = new Schema(articleSchema);
+
+            mongoSchema.plugin(mongooseAcl, {
+                required: ['admin', 'developer']
+            });
+
+            connection
+                .model('articles', mongoSchema)
+                .create({
+                    title: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
+                    grants: ['developer']
+                })
+                .then(function (items) {
+                    done(new Error('Should have thrown an error'));
+                }, function (err) {
+                    done();
+                });
+        });
     });
 
 
