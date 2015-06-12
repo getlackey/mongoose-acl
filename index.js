@@ -54,7 +54,7 @@ module.exports = function (schema, options) {
             options.defaults.push('public');
         }
     }
-    // Add the required grants to defaults so we had them to new docs
+    // Add the required grants to defaults so we add them to new docs
     // in one step
     options.required.forEach(function (grant) {
         if (options.defaults.indexOf(grant) === -1) {
