@@ -27,5 +27,7 @@
         "mocha": "^2.2.5",
         "mongoose": "^4.0.5"
     },
-    "dependencies": {}
+    "dependencies": {
+        "common-errors": "^0.5.1"
+    }
 }
