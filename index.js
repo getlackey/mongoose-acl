@@ -101,6 +101,10 @@ module.exports = function (schema, options) {
             var grants = (doc && doc.grants) || [],
                 isAllowed = false;
 
+            if (!doc) {
+                return doc;
+            }
+
             if (!user && grants.indexOf('public') === -1) {
                 throw new errors.HttpStatusError(401, 'Unauthorized');
             }
