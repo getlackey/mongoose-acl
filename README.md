@@ -89,7 +89,9 @@ These grants will be appended to every document and can't be removed. Either the
 If this options is not defined, by default the **admin** grant will be added.
 
 #### defaults 
-The list of grants that are added to a document on creation, if none is submitted.
+The list of grants that are added to a document on creation, if none is submitted. 
+
+An empty array **[ ]** will not add the public grant - only the required grants will be added.
 
 #### docGrantsField
 The property in this schema where we will store the grants array. By default it's **grants**.
