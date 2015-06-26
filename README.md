@@ -64,7 +64,29 @@ MySchemaModel
 	.then(mySuccessHandler, myErrorHandler);
 ```
 
-### Options
+## Sub-Documents or Mongoose Populate
+When using populate we may end up with conflicting grant definitions in the resulting structure.
+
+This document **will not** be public available:
+
+```
+{
+	"_id": "558d4ec48d77c9f0b3ba2001",
+	"title": "A Document"
+	"parent": {
+		"_id": "558d4ec48d77c9f0b3ba2000",
+		"grants": [
+			"admin"
+		]
+	},
+	"grants": [
+		"public"
+	]
+}
+```
+Even though the document has public access, the parent property is only available to admin users, so we block access to the full document.
+
+## Options
 
 An example with all the available options:
 
@@ -83,26 +105,26 @@ mongoSchema.plugin(acl, {
 });
 ```
 
-#### required
+### required
 These grants will be appended to every document and can't be removed. Either they are merged with the submitted grants or the defaults. There is no need to add the grants in both the required and defaults options. Trying to remove them from the grant list of an existing document throws an error. 
 
 If this options is not defined, by default the **admin** grant will be added.
 
-#### defaults 
+### defaults 
 The list of grants that are added to a document on creation, if none is submitted. 
 
 An empty array **[ ]** will not add the public grant - only the required grants will be added.
 
-#### docGrantsField
+### docGrantsField
 The property in this schema where we will store the grants array. By default it's **grants**.
 
-#### userGrantsField
+### userGrantsField
 The property in the user object that is provided to **checkAcl** where we can find the grants array. By default it's **grants**.
 
-#### userIdField
+### userIdField
 The id property for the user. Used when **addAuthor** is enabled and the author grant isn't defined.
 
-#### addAuthor
+### addAuthor
 Each user may have it's own, exclusive, grant. This is disabled by default.
 
 Useful for transparently granting access to the user own documents. By default the user _id will be used as a grant, prefixed by 'author-', eg. 'author-557847a1ac1235358644d8c8'.
@@ -131,7 +153,7 @@ var user = {
 };
 ```
 
-#### authorIdField
+### authorIdField
 The field in the document where we should get the id from. By default it searches the document for author._id.
 
 
