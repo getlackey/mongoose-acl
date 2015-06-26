@@ -28,6 +28,7 @@
         "mongoose": "^4.0.5"
     },
     "dependencies": {
+        "clone": "^1.0.2",
         "common-errors": "^0.5.1"
     }
 }
