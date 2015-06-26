@@ -1,6 +1,6 @@
 {
     "name": "lackey-mongoose-acl",
-    "version": "0.0.3",
+    "version": "0.0.4",
     "description": "A mongoose plugin to provide granular access control.",
     "main": "index.js",
     "scripts": {
@@ -28,6 +28,7 @@
         "mongoose": "^4.0.5"
     },
     "dependencies": {
+        "clone": "^1.0.2",
         "common-errors": "^0.5.1"
     }
 }

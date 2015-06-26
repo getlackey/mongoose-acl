@@ -17,6 +17,7 @@
 */
 
 var assert = require('assert'),
+    clone = require('clone'),
     errors = require('common-errors');
 
 function deep(obj, str) {
@@ -94,31 +95,63 @@ module.exports = function (schema, options) {
         };
     }
 
-    schema.statics.checkAcl = function search(user) {
+    function isUserAllowed(userGrants, grants) {
+        var isAllowed = userGrants.some(function (grant) {
+            if (grants.indexOf(grant) > -1) {
+                return true;
+            }
+            return false;
+        });
+
+        return isAllowed;
+    }
+
+    // searches the doc recursively and intersects the grants.
+    // Only the grants that show up on ALL grant definitions
+    // will be considered
+    function getGrants(doc, grants) {
+        if (doc.grants) {
+            if (grants) {
+                grants = grants.filter(function (grant) {
+                    return (doc.grants.indexOf(grant) !== -1);
+                });
+            } else {
+                grants = clone(doc.grants);
+            }
+        }
+
+        if (Array.isArray(doc)) {
+            doc.forEach(function (item) {
+                grants = getGrants(item, grants);
+            });
+        } else if (doc instanceof Object) {
+            Object.keys(doc).forEach(function (key) {
+                grants = getGrants(doc[key], grants);
+            });
+        }
+
+        return grants;
+    }
+
+    schema.statics.checkAcl = function checkAcl(user) {
         var userGrants = getUserGrants(user);
 
         return function (doc) {
-            var grants = (doc && doc.grants) || [],
-                isAllowed = false;
+            var grants;
 
             if (!doc) {
                 return doc;
             }
 
+            assert(!Array.isArray(doc), 'Expecting a document, not an Array');
+
+            grants = getGrants(doc);
+
             if (!user && grants.indexOf('public') === -1) {
                 throw new errors.HttpStatusError(401, 'Unauthorized');
             }
 
-            assert(!Array.isArray(doc), 'Expecting a document, not an Array');
-
-            isAllowed = userGrants.some(function (grant) {
-                if (grants.indexOf(grant) > -1) {
-                    return true;
-                }
-                return false;
-            });
-
-            if (!isAllowed) {
+            if (!isUserAllowed(userGrants, grants)) {
                 throw new errors.HttpStatusError(403, 'Forbidden');
             }
 
