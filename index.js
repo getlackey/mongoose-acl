@@ -110,8 +110,18 @@ module.exports = function (schema, options) {
     // Only the grants that show up on ALL grant definitions
     // will be considered
     function getGrants(doc, grants) {
+        if (doc === undefined || doc === null) {
+            return grants;
+        }
+        // if it's a mongoose object, let's just parse the 
+        // relevant properties
+        if (doc.toObject) {
+            doc = doc.toObject();
+        }
+
         if (doc.grants) {
             if (grants) {
+                // intersect grants
                 grants = grants.filter(function (grant) {
                     return (doc.grants.indexOf(grant) !== -1);
                 });
@@ -158,6 +168,7 @@ module.exports = function (schema, options) {
             return doc;
         };
     };
+
     // add default grants to document on creation
     // throw error if required grants were remove
     schema.pre('save', function (next) {
