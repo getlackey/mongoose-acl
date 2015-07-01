@@ -16,8 +16,7 @@
     limitations under the License.
 */
 
-var assert = require('assert'),
-    clone = require('clone'),
+var clone = require('clone'),
     errors = require('common-errors');
 
 function deep(obj, str) {
@@ -119,14 +118,14 @@ module.exports = function (schema, options) {
             doc = doc.toObject();
         }
 
-        if (doc.grants) {
+        if (doc[options.docGrantsField]) {
             if (grants) {
                 // intersect grants
                 grants = grants.filter(function (grant) {
-                    return (doc.grants.indexOf(grant) !== -1);
+                    return (doc[options.docGrantsField].indexOf(grant) !== -1);
                 });
             } else {
-                grants = clone(doc.grants);
+                grants = clone(doc[options.docGrantsField]);
             }
         }
 
@@ -143,10 +142,44 @@ module.exports = function (schema, options) {
         return grants;
     }
 
-    schema.statics.checkAcl = function checkAcl(user) {
-        var userGrants = getUserGrants(user);
+    function removeInvalid(userGrants, doc) {
+        var obj;
 
-        return function (doc) {
+        if (doc === undefined || doc === null) {
+            return doc;
+        }
+        // if it's a mongoose object, let's just parse the 
+        // relevant properties
+        if (doc.toObject) {
+            doc = doc.toObject();
+        }
+
+        if (doc[options.docGrantsField]) {
+            if (!isUserAllowed(userGrants, doc[options.docGrantsField])) {
+                obj = {};
+                obj[options.docGrantsField] = doc[options.docGrantsField];
+                return obj;
+            }
+        }
+
+        if (Array.isArray(doc)) {
+            doc.forEach(function (item, i) {
+                doc[i] = removeInvalid(userGrants, item);
+            });
+        } else if (doc instanceof Object) {
+            Object.keys(doc).forEach(function (key) {
+                doc[key] = removeInvalid(userGrants, doc[key]);
+            });
+        }
+
+        return doc;
+    }
+
+    schema.statics.checkAcl = function checkAcl(user) {
+        var userGrants = getUserGrants(user),
+            fn;
+
+        fn = function (doc) {
             var grants;
 
             if (!doc) {
@@ -165,6 +198,18 @@ module.exports = function (schema, options) {
 
             return doc;
         };
+
+        fn.removeInvalid = function (doc) {
+            if (!doc) {
+                return doc;
+            }
+
+            doc = removeInvalid(userGrants, clone(doc));
+
+            return doc;
+        };
+
+        return fn;
     };
 
     // add default grants to document on creation

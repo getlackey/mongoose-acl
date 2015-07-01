@@ -154,5 +154,49 @@ describe('Mongoose ACL', function () {
                 })
                 .then(null, done);
         });
+
+        it('Should remove the invalid properties', function () {
+            var mongoSchema = new Schema(articleSchema),
+                Model,
+                fn,
+                obj;
+
+            mongoSchema.plugin(mongooseAcl);
+            Model = connection.model('articles', mongoSchema);
+
+            fn = Model
+                .checkAcl({
+                    grants: ['public']
+                })
+                .removeInvalid;
+
+            obj = fn({
+                "_id": "558d4ec48d77c9f0b3ba2001",
+                "title": "A Document",
+                "parent": {
+                    "_id": "558d4ec48d77c9f0b3ba2000",
+                    "grants": [
+                        "admin"
+                    ],
+                    "title": "I'm the parent obj"
+                },
+                "grants": [
+                    "public"
+                ]
+            });
+
+            assert.deepEqual(obj, {
+                "_id": "558d4ec48d77c9f0b3ba2001",
+                "title": "A Document",
+                "parent": {
+                    "grants": [
+                        "admin"
+                    ]
+                },
+                "grants": [
+                    "public"
+                ]
+            });
+        });
     });
 });
