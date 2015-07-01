@@ -53,7 +53,7 @@ MySchemaModel
 	.then(mySuccessHandler, myErrorHandler);
 ```
 
-If you're a pedantic HTTP API developer this will not be acceptable - a proper HTTP **must** be returned. So you can check ACL **after** the query has been performed. That will trigger an 403 [HttpStatusError](https://www.npmjs.com/package/common-errors#httpstatus), if the user isn't allowed to access the document. No user, triggers an HTTP 401 Unauthorized.
+If you're a pedantic HTTP API developer this will not be acceptable - a proper HTTP code **must** be returned. So you can check ACL **after** the query has been performed. That will trigger an 403 [HttpStatusError](https://www.npmjs.com/package/common-errors#httpstatus), if the user isn't allowed to access the document. No user, triggers an HTTP 401 Unauthorized.
 
 ``` 
 MySchemaModel
@@ -67,14 +67,46 @@ MySchemaModel
 ## Sub-Documents or Mongoose Populate
 When using populate we may end up with conflicting grant definitions in the resulting structure.
 
+### Blocking access
 This document **will not** be public available:
+
+```
+{
+	"_id": "558d4ec48d77c9f0b3ba2001",
+	"title": "A Document",
+	"parent": {
+		"_id": "558d4ec48d77c9f0b3ba2000",
+		"grants": [
+			"admin"
+		],
+        "title": "I'm the parent obj"
+	},
+	"grants": [
+		"public"
+	]
+}
+```
+Even though the document has public access, the parent property is only available to admin users, so we block access to the full document by default.
+
+### Removing Invalid
+Or, we can remove the the objects that are missing the grants the user holds.
+
+``` 
+MySchemaModel
+	.findOne()
+	.lean(true)
+	.exec()
+	.then(MySchemaModel.checkAcl(res.user).removeInvalid)
+	.then(mySuccessHandler, myErrorHandler);
+```
+
+That would return:
 
 ```
 {
 	"_id": "558d4ec48d77c9f0b3ba2001",
 	"title": "A Document"
 	"parent": {
-		"_id": "558d4ec48d77c9f0b3ba2000",
 		"grants": [
 			"admin"
 		]
@@ -84,7 +116,8 @@ This document **will not** be public available:
 	]
 }
 ```
-Even though the document has public access, the parent property is only available to admin users, so we block access to the full document.
+
+We are leaving the grants array on the parent object so the user has some hint that the parent data was removed for lack of permissions. 
 
 ## Options
 
