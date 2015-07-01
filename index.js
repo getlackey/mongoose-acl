@@ -153,8 +153,6 @@ module.exports = function (schema, options) {
                 return doc;
             }
 
-            assert(!Array.isArray(doc), 'Expecting a document, not an Array');
-
             grants = getGrants(doc);
 
             if (!user && grants.indexOf('public') === -1) {
