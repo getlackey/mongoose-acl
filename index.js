@@ -255,13 +255,15 @@ module.exports = function (schema, options) {
 
     // expose the checkAcl method in the model
     schema.on('init', function (Model) {
+        var modelFind = Model.find,
+            modelFindOne = Model.findOne;
         // We are overwriting/extending the find methods
-        // we keep the reference to the old method in __find
+        // we keep the reference to the old method in modelFind
         // and call it in our new find method
-        Model.__find = Model.find;
+
         Model.find = function (conditions, fields, opts, callback) {
             var self = this,
-                mq = self.__find(conditions, fields, opts, callback);
+                mq = modelFind.call(self, conditions, fields, opts, callback);
 
             mq.checkAcl = function (user, cb) {
                 var cond = addAclQuery(mq, user);
@@ -274,10 +276,9 @@ module.exports = function (schema, options) {
             return mq;
         };
 
-        Model.__findOne = Model.findOne;
         Model.findOne = function (conditions, fields, opts, callback) {
             var self = this,
-                mq = self.__findOne(conditions, fields, opts, callback);
+                mq = modelFindOne.call(self, conditions, fields, opts, callback);
 
             mq.checkAcl = function (user, cb) {
                 var cond = addAclQuery(mq, user);

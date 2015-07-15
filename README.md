@@ -16,7 +16,7 @@ In the current implementation either the user has full access to the data or he 
 There are two special grants - **public** and **admin**. The **public** grant is added by default to all documents, granting access to anyone. All requests will return documents that hold the **public** grant, even if there is no logged in user. The **admin** grant is used if no required grants are defined in the plugin, so we have an easy way to grant full access to any user.
 
 ## Basic Usage
-Just load it in a mongoose schema, just like any other plugin.
+Load it in a mongoose schema, just like any other plugin.
 
 ```
 var acl = require('lackey-mongoose-acl');
